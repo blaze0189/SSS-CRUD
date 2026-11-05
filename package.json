@@ -6,8 +6,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "test": "vitest run --globals"
+    "dev": "node swagger.js && nodemon index.js",
+    "test": "vitest run --globals",
+    "test:watch": "vitest",
+    "swagger": "node swagger.js"
   },
   "keywords": [],
   "author": "Ang Rui Yang, P2607876 ,RUIYANG.26@ichat.sp.edu.sg, DAAA/FT/1B/01",
