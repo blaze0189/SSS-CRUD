@@ -151,6 +151,12 @@ const filterByMaxPriceThenSort = (itemArray, maxPrice, sort) => {
   return (filteredArray)
 };
 
+// POST /snacks
+// Add a new snack to the array. The request body will contain name, price, and quantity.
+app.post('/snack', (req,res) => {
+
+});
+
 // for CA1 and CA2, you might want to do a catch-all route to handle any requests that don't match the above routes. This is a good practice to avoid exposing unnecessary information about your server and to provide a consistent error response for unknown routes. You can add the following code at the end of your route definitions:
 // app.all('/.*$/', (req, res) => { // If you like the use of regular expression better
 app.all('/*splat', (req, res) => { // use of '*' as a wildcard to match any route that hasn't been defined above. Only for express V4.
