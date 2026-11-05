@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Express.js Cheat Sheet</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0f1a;
+      --surface: #131726;
+      --surface2: #1a1f35;
+      --border: #252d4a;
+      --accent: #4fffb0;
+      --accent4: #74b9ff;
+      --accent5: #a29bfe;
+      --text: #e8eaf6;
+      --muted: #8892b0;
+      --get: #4fffb0;
+      --post: #74b9ff;
+      --put: #ffd166;
+      --delete: #ff6b6b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      padding: 32px 24px 48px;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #ffffff07 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, #fff, #8892b0);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent4));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .full { grid-column: 1 / -1; }
+
+    .block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .block-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .block-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      min-width: 56px;
+      text-align: center;
+    }
+    .tag-get    { background: #4fffb018; color: var(--get);    border: 1px solid #4fffb040; }
+    .tag-post   { background: #74b9ff18; color: var(--post);   border: 1px solid #74b9ff40; }
+    .tag-put    { background: #ffd16618; color: var(--put);    border: 1px solid #ffd16640; }
+    .tag-delete { background: #ff6b6b18; color: var(--delete); border: 1px solid #ff6b6b40; }
+    .tag-mw     { background: #a29bfe18; color: var(--accent5);border: 1px solid #a29bfe40; }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text);
+      flex: 1;
+      font-variant-ligatures: none;
+      font-feature-settings: "liga" 0, "calt" 0;
+    }
+    .note {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .kw  { color: #ff79c6; }
+    .fn  { color: #4fffb0; }
+    .str { color: #ffd166; }
+    .pm  { color: #74b9ff; }
+    .cm  { color: #4a5580; }
+    .num { color: #a29bfe; }
+
+    .status-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      padding: 12px 14px;
+    }
+    .sc {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 10px;
+      border-radius: 8px;
+      border-left: 3px solid transparent;
+      background: var(--surface2);
+    }
+    .sc-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .sc-name { font-size: 0.72rem; font-weight: 500; }
+    .sc-desc { font-size: 0.66rem; color: var(--muted); line-height: 1.3; }
+    .s2  { border-color: var(--get);    } .s2  .sc-code { color: var(--get); }
+    .s4a { border-color: var(--put);    } .s4a .sc-code { color: var(--put); }
+    .s4b { border-color: var(--delete); } .s4b .sc-code { color: var(--delete); }
+    .s5  { border-color: var(--delete); } .s5  .sc-code { color: var(--delete); }
+
+    .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+    .pills { display: flex; flex-wrap: wrap; gap: 7px; padding: 12px 14px; }
+    .pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      color: var(--accent4);
+      background: #74b9ff12;
+      border: 1px solid #74b9ff30;
+      border-radius: 6px;
+      padding: 4px 10px;
+    }
+
+    /* ── JS Methods section ── */
+    .section-label {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .section-label span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #3a4470;
+    }
+    .section-label::before,
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .method-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .method-block .block-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .method-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .method-desc {
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding: 0 14px 4px;
+      line-height: 1.5;
+    }
+    .method-code-block {
+      margin: 0 14px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .method-code-block code {
+      font-size: 0.76rem;
+      display: block;
+      line-height: 1.7;
+      white-space: pre;
+    }
+    .method-tags {
+      display: flex;
+      gap: 5px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 28px;
+      color: #3a4470;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+    }
+
+    @media (max-width: 580px) {
+      .grid { grid-template-columns: 1fr; }
+      .full { grid-column: 1; }
+      .status-row { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body><div class="container">
+<header>
+  <h1>Express.js <span>Cheat Sheet</span></h1>
+  <span class="subtitle">REST API quick reference</span>
+</header>
+
+<div class="grid">
+
+  <!-- Middleware -->
+  <div class="block full">
+    <div class="block-title">Middleware</div>
+    <div class="block-body">
+      <div class="row"><span class="tag tag-mw">use</span> <code>app.<span class="fn">use</span>(express.<span class="fn">json</span>())&nbsp;&nbsp;<span class="cm">// parse req.body — must come before your routes</span></code></div>
+    </div>
+  </div>
+
+  <!-- HTTP Methods -->
+  <div class="block full">
+    <div class="block-title">HTTP Methods</div>
+    <div class="block-body">
+      <div class="row"><span class="tag tag-get">GET</span> <code>app.<span class="fn">get</span>(<span class="str">'/path'</span>, (<span class="pm">req</span>, <span class="pm">res</span>) =&gt; { ... })</code> <span class="note">Read data</span></div>
+      <div class="row"><span class="tag tag-post">POST</span> <code>app.<span class="fn">post</span>(<span class="str">'/path'</span>, (<span class="pm">req</span>, <span class="pm">res</span>) =&gt; { ... })</code> <span class="note">Create data</span></div>
+      <div class="row"><span class="tag tag-put">PUT</span> <code>app.<span class="fn">put</span>(<span class="str">'/path/:id'</span>, (<span class="pm">req</span>, <span class="pm">res</span>) =&gt; { ... })</code> <span class="note">Update data</span></div>
+      <div class="row"><span class="tag tag-delete">DELETE</span> <code>app.<span class="fn">delete</span>(<span class="str">'/path/:id'</span>, (<span class="pm">req</span>, <span class="pm">res</span>) =&gt; { ... })</code> <span class="note">Remove data</span></div>
+    </div>
+  </div>
+
+  <!-- res.status() -->
+  <div class="block">
+    <div class="block-title">res.status()</div>
+    <div class="block-body">
+      <div class="row"><code><span class="pm">res</span>.<span class="fn">status</span>(<span class="num">200</span>).<span class="fn">json</span>({ ... })</code></div>
+      <div class="row"><code><span class="pm">res</span>.<span class="fn">status</span>(<span class="num">404</span>).<span class="fn">json</span>({ error: <span class="str">'...'</span> })</code></div>
+      <div class="divider"></div>
+      <div class="row"><code style="color: var(--muted); font-size: 0.74rem;">chain .status() before .json() or .send()</code></div>
+    </div>
+  </div>
+
+  <!-- req properties -->
+  <div class="block">
+    <div class="block-title">req — useful properties</div>
+    <div class="pills">
+      <span class="pill">req.body</span>
+      <span class="pill">req.params</span>
+      <span class="pill">req.query</span>
+      <span class="pill">req.headers</span>
+      <span class="pill">req.method</span>
+      <span class="pill">req.url</span>
+    </div>
+  </div>
+
+  <!-- Status codes -->
+  <div class="block full">
+    <div class="block-title">Status Codes</div>
+    <div class="status-row">
+      <div class="sc s2"><span class="sc-code">200</span> <span class="sc-name">OK</span> <span class="sc-desc">Success — GET, PUT, DELETE</span></div>
+      <div class="sc s2"><span class="sc-code">201</span> <span class="sc-name">Created</span> <span class="sc-desc">New resource — POST</span></div>
+      <div class="sc s4a"><span class="sc-code">400</span> <span class="sc-name">Bad Request</span> <span class="sc-desc">Invalid / missing input</span></div>
+      <div class="sc s4b"><span class="sc-code">401</span> <span class="sc-name">Unauthorized</span> <span class="sc-desc">Not logged in / no token</span></div>
+      <div class="sc s4a"><span class="sc-code">404</span> <span class="sc-name">Not Found</span> <span class="sc-desc">Resource doesn't exist</span></div>
+      <div class="sc s5"><span class="sc-code">500</span> <span class="sc-name">Server Error</span> <span class="sc-desc">Something broke server-side</span></div>
+    </div>
+  </div>
+
+  <!-- ── SECTION DIVIDER ── -->
+  <div class="section-label">
+    <span>JS Array Methods for CRUD</span>
+  </div>
+
+  <!-- .find() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">.find()</span>
+      <div class="method-tags">
+        <span class="tag tag-get">GET</span>
+        <span class="tag tag-put">PUT</span>
+      </div>
+    </div>
+    <p class="method-desc">Returns the <em>first</em> element matching a condition. Ideal for fetching a single record by ID. Since it returns a <em>reference</em>, you can also use it to update fields directly.</p>
+    <div class="method-code-block"><code><span class="cm">// GET — look up by ID</span>
+<span class="kw">const</span> user = users.<span class="fn">find</span>(
+  <span class="pm">u</span> => <span class="pm">u</span>.id === <span class="pm">req</span>.params.id
+)
+<span class="kw">if</span> (!user) <span class="kw">return</span> <span class="pm">res</span>.<span class="fn">status</span>(<span class="num">404</span>).<span class="fn">json</span>({ error: <span class="str">'Not found'</span> })
+
+<span class="cm">// PUT — mutate the found object directly</span>
+user.name = <span class="pm">req</span>.body.name</code></div>
+  </div>
+
+  <!-- .filter() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">.filter()</span>
+      <div class="method-tags">
+        <span class="tag tag-get">GET</span>
+        <span class="tag tag-delete">DELETE</span>
+      </div>
+    </div>
+    <p class="method-desc">Returns a new array of all elements that pass a test. Used for listing with query params, or removing items.</p>
+    <div class="method-code-block"><code><span class="cm">// GET — filter by query param</span>
+<span class="kw">const</span> active = users.<span class="fn">filter</span>(<span class="pm">u</span> => <span class="pm">u</span>.active === <span class="kw">true</span>)
+
+<span class="cm">// DELETE — remove by ID</span>
+users = users.<span class="fn">filter</span>(<span class="pm">u</span> => <span class="pm">u</span>.id !== <span class="pm">req</span>.params.id)</code></div>
+  </div>
+
+  <!-- .push() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">.push()</span>
+      <div class="method-tags">
+        <span class="tag tag-post">POST</span>
+      </div>
+    </div>
+    <p class="method-desc">Appends one or more elements to the end of an array, mutating it in place. The go-to for creating a new record.</p>
+    <div class="method-code-block"><code><span class="kw">const</span> newUser = { id: <span class="fn">Date</span>.<span class="fn">now</span>(), ...<span class="pm">req</span>.body }
+users.<span class="fn">push</span>(newUser)
+<span class="pm">res</span>.<span class="fn">status</span>(<span class="num">201</span>).<span class="fn">json</span>(newUser)</code></div>
+  </div>
+
+  <!-- .sort() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">.sort()</span>
+      <div class="method-tags">
+        <span class="tag tag-get">GET</span>
+      </div>
+    </div>
+    <p class="method-desc">Sorts elements in place. Use a comparator for numbers/dates. Pair with <code style="font-size:0.74rem;color:var(--accent4)">req.query</code> to let callers choose order.</p>
+    <div class="method-code-block"><code><span class="cm">// ascending by createdAt</span>
+<span class="kw">const</span> sorted = [...items].<span class="fn">sort</span>(
+  (<span class="pm">a</span>, <span class="pm">b</span>) => <span class="kw">new</span> <span class="fn">Date</span>(<span class="pm">a</span>.createdAt) - <span class="kw">new</span> <span class="fn">Date</span>(<span class="pm">b</span>.createdAt)
+)</code></div>
+  </div>
+
+  <!-- .slice() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">.slice()</span>
+      <div class="method-tags">
+        <span class="tag tag-get">GET</span>
+      </div>
+    </div>
+    <p class="method-desc">Returns a shallow copy of a portion of an array. Essential for pagination with <code style="font-size:0.74rem;color:var(--accent4)">?page=</code> and <code style="font-size:0.74rem;color:var(--accent4)">?limit=</code> query params.</p>
+    <div class="method-code-block"><code><span class="kw">const</span> page  = <span class="fn">Number</span>(<span class="pm">req</span>.query.page)  || <span class="num">1</span>
+<span class="kw">const</span> limit = <span class="fn">Number</span>(<span class="pm">req</span>.query.limit) || <span class="num">10</span>
+<span class="kw">const</span> start = (page - <span class="num">1</span>) * limit
+<span class="kw">const</span> paged = items.<span class="fn">slice</span>(start, start + limit)</code></div>
+  </div>
+
+  <!-- ── SECTION DIVIDER ── -->
+  <div class="section-label">
+    <span>Validation &amp; Type Coercion</span>
+  </div>
+
+  <!-- .some() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">.some()</span>
+      <div class="method-tags">
+        <span class="tag tag-post">POST</span>
+      </div>
+    </div>
+    <p class="method-desc">Returns <code style="font-size:0.74rem;color:var(--accent4)">true</code> if <em>at least one</em> element passes the test. Use it to check for duplicates before creating a new record.</p>
+    <div class="method-code-block"><code><span class="kw">const</span> exists = users.<span class="fn">some</span>(
+  <span class="pm">u</span> => <span class="pm">u</span>.email === <span class="pm">req</span>.body.email
+)
+<span class="kw">if</span> (exists) <span class="kw">return</span> <span class="pm">res</span>.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ error: <span class="str">'Email taken'</span> })</code></div>
+  </div>
+
+  <!-- .includes() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">.includes()</span>
+      <div class="method-tags">
+        <span class="tag tag-post">POST</span>
+        <span class="tag tag-put">PUT</span>
+      </div>
+    </div>
+    <p class="method-desc">Checks if a value exists in an array. Ideal for validating a field against a fixed list of allowed values before saving.</p>
+    <div class="method-code-block"><code><span class="kw">const</span> ROLES = [<span class="str">'admin'</span>, <span class="str">'editor'</span>, <span class="str">'viewer'</span>]
+<span class="kw">if</span> (!ROLES.<span class="fn">includes</span>(<span class="pm">req</span>.body.role)) {
+  <span class="kw">return</span> <span class="pm">res</span>.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ error: <span class="str">'Invalid role'</span> })
+}</code></div>
+  </div>
+
+  <!-- Array.isArray() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">Array.isArray()</span>
+      <div class="method-tags">
+        <span class="tag tag-post">POST</span>
+        <span class="tag tag-put">PUT</span>
+      </div>
+    </div>
+    <p class="method-desc">Guards against a body field that should be an array but isn't — e.g. a client sends a string instead of a list.</p>
+    <div class="method-code-block"><code><span class="kw">if</span> (!<span class="fn">Array</span>.<span class="fn">isArray</span>(<span class="pm">req</span>.body.tags)) {
+  <span class="kw">return</span> <span class="pm">res</span>.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ error: <span class="str">'tags must be an array'</span> })
+}</code></div>
+  </div>
+
+  <!-- Number methods — full width -->
+  <div class="method-block full">
+    <div class="block-title">
+      <span class="method-name">parseInt() &nbsp;·&nbsp; Number() &nbsp;·&nbsp; Number.isInteger() &nbsp;·&nbsp; isNaN()</span>
+      <div class="method-tags">
+        <span class="tag tag-get">GET</span>
+        <span class="tag tag-post">POST</span>
+        <span class="tag tag-put">PUT</span>
+        <span class="tag tag-delete">DELETE</span>
+      </div>
+    </div>
+    <p class="method-desc">Everything from <code style="font-size:0.74rem;color:var(--accent4)">req.params</code> and <code style="font-size:0.74rem;color:var(--accent4)">req.query</code> arrives as a <em>string</em>. Coerce and validate before any logic, or comparisons silently break.</p>
+    <div class="method-code-block"><code><span class="fn">parseInt</span>(<span class="pm">req</span>.params.id, <span class="num">10</span>)        <span class="cm">// "42"  → 42  (always pass base 10)</span>
+<span class="fn">Number</span>(<span class="pm">req</span>.query.page) || <span class="num">1</span>         <span class="cm">// "3"   → 3   (falls back to 1 if NaN)</span>
+<span class="fn">isNaN</span>(id)                            <span class="cm">// true if coercion failed — guard every parseInt</span>
+<span class="fn">Number</span>.<span class="fn">isInteger</span>(<span class="fn">Number</span>(<span class="pm">req</span>.body.qty)) <span class="cm">// rejects 3.5, "abc", undefined</span>
+
+<span class="cm">// typical guard pattern</span>
+<span class="kw">const</span> id = <span class="fn">parseInt</span>(<span class="pm">req</span>.params.id, <span class="num">10</span>)
+<span class="kw">if</span> (<span class="fn">isNaN</span>(id)) <span class="kw">return</span> <span class="pm">res</span>.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ error: <span class="str">'ID must be a number'</span> })</code></div>
+  </div>
+
+  <!-- ── SECTION DIVIDER ── -->
+  <div class="section-label">
+    <span>String Methods</span>
+  </div>
+
+  <!-- .trim() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">.trim()</span>
+      <div class="method-tags">
+        <span class="tag tag-post">POST</span>
+        <span class="tag tag-put">PUT</span>
+      </div>
+    </div>
+    <p class="method-desc">Removes leading and trailing whitespace. Always sanitize string fields from <code style="font-size:0.74rem;color:var(--accent4)">req.body</code> before saving — users often paste values with accidental spaces.</p>
+    <div class="method-code-block"><code><span class="kw">const</span> email = <span class="pm">req</span>.body.email.<span class="fn">trim</span>()
+<span class="cm">// "  hello@example.com  " → "hello@example.com"</span>
+
+<span class="kw">const</span> name = <span class="pm">req</span>.body.name?.<span class="fn">trim</span>()   <span class="cm">// ?. guards if field is undefined</span></code></div>
+  </div>
+
+  <!-- .replace() -->
+  <div class="method-block">
+    <div class="block-title">
+      <span class="method-name">.replace() &nbsp;·&nbsp; .replaceAll()</span>
+      <div class="method-tags">
+        <span class="tag tag-post">POST</span>
+        <span class="tag tag-put">PUT</span>
+      </div>
+    </div>
+    <p class="method-desc">Substitutes matched text with a replacement. Use a regex for pattern-based sanitization. <code style="font-size:0.74rem;color:var(--accent4)">.replaceAll()</code> targets every occurrence; <code style="font-size:0.74rem;color:var(--accent4)">.replace()</code> only the first unless given a <code style="font-size:0.74rem;color:var(--accent4)">/g</code> flag.</p>
+    <div class="method-code-block"><code><span class="cm">// strip non-numeric chars from a phone field</span>
+<span class="kw">const</span> phone = <span class="pm">req</span>.body.phone.<span class="fn">replace</span>(<span class="str">/\D/g</span>, <span class="str">''</span>)
+<span class="cm">// "(65) 9123-4567" → "6591234567"</span>
+
+<span class="cm">// slugify a title for a URL</span>
+<span class="kw">const</span> slug = <span class="pm">req</span>.body.title.<span class="fn">trim</span>().<span class="fn">toLowerCase</span>().<span class="fn">replaceAll</span>(<span class="str">' '</span>, <span class="str">'-'</span>)</code></div>
+  </div>
+
+  <!-- ── SECTION DIVIDER ── -->
+  <div class="section-label">
+    <span>Async Iteration</span>
+  </div>
+
+  <!-- for...of — full width -->
+  <div class="method-block full">
+    <div class="block-title">
+      <span class="method-name">for...of</span>
+      <div class="method-tags">
+        <span class="tag tag-post">POST</span>
+        <span class="tag tag-put">PUT</span>
+      </div>
+    </div>
+    <p class="method-desc">The only safe way to use <code style="font-size:0.74rem;color:var(--accent4)">await</code> inside a loop. Unlike <code style="font-size:0.74rem;color:var(--accent4)">.map()</code>, it actually pauses execution at each iteration — runs sequentially, one item at a time.</p>
+    <div class="method-code-block"><code><span class="cm">// POST — insert a batch of items from req.body</span>
+<span class="kw">const</span> created = []
+<span class="kw">for</span> (<span class="kw">const</span> item <span class="kw">of</span> <span class="pm">req</span>.body.items) {
+  <span class="kw">const</span> saved = <span class="kw">await</span> db.<span class="fn">insert</span>(item)   <span class="cm">// waits before next iteration</span>
+  created.<span class="fn">push</span>(saved)
+}
+<span class="pm">res</span>.<span class="fn">status</span>(<span class="num">201</span>).<span class="fn">json</span>(created)
+
+<span class="cm">// .map(async ...) does NOT await — returns [ Promise, Promise, ... ]</span></code></div>
+  </div>
+
+</div><!-- /grid -->
+
+<footer>express-cheatsheet · at a glance</footer>
+</div></body></html>
