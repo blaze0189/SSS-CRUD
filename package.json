@@ -6,16 +6,15 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node swagger.js && nodemon index.js",
+    "dev": "nodemon index.js",
     "test": "vitest run --globals",
-    "test:watch": "vitest",
-    "swagger": "node swagger.js"
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "Ang Rui Yang, P2607876 ,RUIYANG.26@ichat.sp.edu.sg, DAAA/FT/1B/01",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.3.0"
   },
   "devDependencies": {
     "fast-check": "^4.6.0",

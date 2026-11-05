@@ -3,21 +3,11 @@
 
 import express from 'express';
 
-// If you are going to use Swagger UI to test the API, you need to install the swagger-ui-express package. You can do this by running the following command in your terminal:
-// Can skip Swagger if you using Bruno
-// Must have following 4 lines if using Swagger
-import swaggerUi from 'swagger-ui-express';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const swaggerDocument = require('./swagger-output.json');
 const app = express();
 
 // The following 2 lines are app level middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // include this middleware to make it convenient to use form style data when testing
-
-// Swagger UI documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // In-memory data arrays
 const snacks = [
@@ -153,8 +143,20 @@ const filterByMaxPriceThenSort = (itemArray, maxPrice, sort) => {
 
 // POST /snacks
 // Add a new snack to the array. The request body will contain name, price, and quantity.
-app.post('/snack', (req,res) => {
-
+app.post('/snacks', (req, res) => {
+  const { price, name, quantity } = req.body; // use destructuring assignment to get the values from the request body
+  if (!name || !price || !quantity) {
+    return res.status(400).json({ "error": "Missing required fields" });
+  }
+  if (isNaN(price) || isNaN(quantity)) {
+    return res.status(400).json({ "error": "Invalid price or quantity value. Use numbers." });
+  }
+  if (price < 0 || quantity < 0) {
+    return res.status(400).json({ "error": "Invalid price or quantity value. Use non-negative numbers." });
+  }
+  const newSnack = { name, price: Number(price), quantity: Number(quantity) };
+  snacks.push(newSnack);
+  res.status(201).json(newSnack);
 });
 
 // for CA1 and CA2, you might want to do a catch-all route to handle any requests that don't match the above routes. This is a good practice to avoid exposing unnecessary information about your server and to provide a consistent error response for unknown routes. You can add the following code at the end of your route definitions:
