@@ -1,12 +1,26 @@
-import express from 'express';
-import { fileURLToPath } from 'url';
+// Ang Rui Yang, P2607876 ,RUIYANG.26@ichat.sp.edu.sg, DAAA/FT/1B/01
+// Unit3 Part1 Practical - Simple Shopping Server CRUD
 
+import express from 'express';
+
+// If you are going to use Swagger UI to test the API, you need to install the swagger-ui-express package. You can do this by running the following command in your terminal:
+// Can skip Swagger if you using Bruno
+// Must have following 4 lines if using Swagger
+import swaggerUi from 'swagger-ui-express';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const swaggerDocument = require('./swagger-output.json');
 const app = express();
 
+// The following 2 lines are app level middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // include this middleware to make it convenient to use form style data when testing
+
+// Swagger UI documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // In-memory data arrays
-let snacks = [
+const snacks = [
   { id: 1, name: 'Chips', price: 2.99, quantity: 50 },
   { id: 2, name: 'Cookies', price: 3.49, quantity: 30 },
   { id: 3, name: 'Candy Bar', price: 1.25, quantity: 80 },
@@ -19,7 +33,7 @@ let snacks = [
   { id: 10, name: 'Rice Cakes', price: 3.99, quantity: 35 },
 ];
 
-let electronics = [
+const electronics = [
   { id: 1, name: 'Headphones', price: 29.99, quantity: 20 },
   { id: 2, name: 'USB Cable', price: 9.99, quantity: 100 },
   { id: 3, name: 'Mouse', price: 19.99, quantity: 45 },
@@ -32,84 +46,125 @@ let electronics = [
   { id: 10, name: 'Phone Charger', price: 12.99, quantity: 90 },
 ];
 
-// ---------- REPLACE WITH CODE FROM PREVIOUS PRACTICAL <START> ---------------------
-app.get('/', (req, res) => {
+// ============================================================
+// TODO: Implement the routes below
+// ============================================================
+
+// GET /snacks/:id - return a single snack by ID
+// If found: return the snack object as JSON
+// If not found: return { "error": "Item not found" }
+app.get('/snacks/:id', (req, res) => { // route or path parameter is a variable that can be accessed using req.params.<name>
+  // TODO: Implement this route
+  // Hint: use req.params.id to get the ID from the URL
+  // Hint: use Number() to convert the string ID to a number
+  // Hint: use .find() to search the snacks array
+  const id = Number(req.params.id);
+  // const {id} = req.params; // alternative way to get the id from the URL. Use destructuring assignment if many parameters
+  if (snacks[id - 1] === undefined) { // if the id is not found in the array, return error
+    return res.status(404).json({ error: 'Item not found' });
+  } else {
+    return res.status(200).json(snacks[id - 1]); // if found, return the snack object as JSON
+  }
 });
 
+// GET /snacks - return all snacks as JSON
+// Optional query params:
+//   ?maxPrice=<number> - filter items where price <= maxPrice (return error JSON if invalid/negative)
+//   ?sort=asc|desc     - sort results by price (return error JSON if invalid value)
+//   When both are provided, filter first then sort
 app.get('/snacks', (req, res) => {
+  // TODO: Implement this route
+  const { maxPrice, sort } = req.query;
+  if (snacks.length === 0) { // in a real database, the "get" (SELECT) returns an array of records
+    return res.status(404).json({ error: 'No snacks found' });
+  } else {
+    return res.status(200).json(filterByMaxPriceThenSort(snacks, maxPrice, sort)); // for success it is status 200. If not there it is assumed to be 200
+  }
 });
 
-app.get('/electronics', (req, res) => {
-});
-
-app.get('/snacks/:id', (req, res) => {
-});
-
+// GET /electronics/:id - return a single electronic by ID
+// Same behavior as /snacks/:id but searches the electronics array
 app.get('/electronics/:id', (req, res) => {
-});
-// ---------------------- REPLACE WITH CODE FROM PREVIOUS PRACTICAL <END> -------------------------
-
-
-// TODO Q1: POST /snacks - add a new snack (INSTRUCTOR LED)
-app.post('/snacks', (req, res) => {
-});
-
-// TODO Q2: POST /electronics - add a new electronic item (STUDENT DIY)
-app.post('/electronics', (req, res) => {
-  // Same pattern as Q1 but for electronics array
+  // TODO: Implement this route
+  const id = Number(req.params.id);
+  if (electronics[id - 1] === undefined) { // if the id is not found in the array, return error
+    return res.status(404).json({ error: 'Item not found' });
+  } else {
+    return res.status(200).json(electronics[id - 1]); // if found, return the electronic object as JSON
+  }
 });
 
-// TODO Q3: DELETE /snacks/:id - delete a snack by ID (INSTRUCTOR LED)
-app.delete('/snacks/:id', (req, res) => {
-  // Parse id from req.params, convert to Number
-  // Find the item (hint: .find())
-  // If not found, return res.status(404).json(...)
-  // Remove from array (hint: .filter() and reassign, or .splice())
-  // Respond with res.status(200).json(deletedItem)
+// GET /electronics - return all electronics as JSON
+// Same query param support as /snacks
+app.get('/electronics', (req, res) => {
+  // TODO: Implement this route
+  const { maxPrice, sort } = req.query;
+  if (electronics.length === 0) { // in a real database, the "get" (SELECT) returns an array of records
+    return res.status(404).json({ error: 'No electronics found' });
+  } else {
+    return res.status(200).json(filterByMaxPriceThenSort(electronics, maxPrice, sort));
+  }
 });
 
-// TODO Q4: DELETE /electronics/:id - delete an electronic item by ID (STUDENT DIY)
-app.delete('/electronics/:id', (req, res) => {
-  // Same pattern as Q3 but for electronics array
+// GET / - return all products
+// Without query params: return { snacks: [...], electronics: [...] }
+// With ?category=snacks: return only the snacks array
+// With ?category=electronics: return only the electronics array
+// With invalid category: return { "error": "Invalid category. Use 'snacks' or 'electronics'." }
+// Also supports ?maxPrice= and ?sort= (same rules as collection endpoints)
+app.get('/', (req, res) => {
+  // TODO: Implement this route
+  // Hint: use req.query to access query parameters (e.g., req.query.category)
+  const { category, maxPrice, sort } = req.query;
+  if (!category) {
+    return res.status(200).json({ snacks: filterByMaxPriceThenSort(snacks, maxPrice, sort), electronics: filterByMaxPriceThenSort(electronics, maxPrice, sort) });
+  } else if (category === 'snacks') {
+    return res.status(200).json(filterByMaxPriceThenSort(snacks, maxPrice, sort));
+  } else if (category === 'electronics') {
+    return res.status(200).json(filterByMaxPriceThenSort(electronics, maxPrice, sort));
+  } else {
+    return res.status(400).json({ "error": "Invalid category" });
+  }
 });
 
-// TODO Q5: PUT /snacks/:id - update a snack by ID (INSTRUCTOR LED)
-app.put('/snacks/:id', (req, res) => {
-  // Parse id from req.params, convert to Number
-  // Find the item (hint: .find())
-  // If not found, return res.status(404).json(...)
-  // Extract name, price, quantity from req.body
-  // Only update fields that are !== undefined
-  // Validate price/quantity before updating; return res.status(400).json(...) if invalid
-  // Respond with res.status(200).json(updatedItem)
-});
+const filterByMaxPriceThenSort = (itemArray, maxPrice, sort) => {
+  // Implementation for filtering by maxPrice and sorting
+  let filteredArray = [...itemArray]; // create a copy of the original array to avoid mutating it
+  if (!maxPrice) {
+    console.log(`no maxPrice option specified`); // default when maxPrice option not specified to use original array. This is the default behavior of the .filter() method when no callback function is provided.
+  } else if (isNaN(maxPrice)) {
+    return({ "error": "Invalid maxPrice value. Use a number." });
+  } else if (maxPrice < 0) {
+    return({ "error": "Invalid maxPrice value. Use a non-negative number." });
+  } else {
+    filteredArray = itemArray.filter(element => element.price <= Number(maxPrice));
+  }
+  if (!sort) {
+    console.log(`no sorting option specified`); // default when sort option not specified to use original order of the array. This is the default behavior of the .sort() method when no compare function is provided.
+  } else if (sort === 'asc') {
+    filteredArray.sort((a, b) => a.price - b.price);
+  } else if (sort === 'desc') {
+    filteredArray.sort((a, b) => b.price - a.price);
+  } else {
+    return({ "error": "Invalid sort option. Use 'asc' or 'desc'." });
+  }
+  return (filteredArray)
+};
 
-// TODO Q6: PUT /electronics/:id - update an electronic item by ID (STUDENT DIY)
-app.put('/electronics/:id', (req, res) => {
-  // Same pattern as Q5 but for electronics array
+// for CA1 and CA2, you might want to do a catch-all route to handle any requests that don't match the above routes. This is a good practice to avoid exposing unnecessary information about your server and to provide a consistent error response for unknown routes. You can add the following code at the end of your route definitions:
+// app.all('/.*$/', (req, res) => { // If you like the use of regular expression better
+app.all('/*splat', (req, res) => { // use of '*' as a wildcard to match any route that hasn't been defined above. Only for express V4.
+  console.log(`Unknown route: ${req.method} ${req.url}`); // log the unknown route to the console for debugging purposes
+  res.sendStatus(404);
 });
 
 // ============================================================
-// TODO Q7a: Wrap POST /snacks handler in try-catch (INSTRUCTOR LED)
-//   In the catch block: res.status(500).json({ error: err.message })
+// Server startup
 // ============================================================
-
-// ============================================================
-// TODO Q7b: Wrap all other POST, DELETE, PUT handlers in try-catch (STUDENT DIY)
-//   In the catch block: res.status(500).json({ error: err.message })
-// ============================================================
-
-// ============================================================
-// BONUS Q8: Refactor GET routes to also use proper status codes and try-catch
-//   200 success, 400 invalid params, 404 not found, 500 in catch
-// ============================================================
-
 const PORT = 3000;
-const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
-
-if (isDirectRun) {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, 'localhost', () => { // put localhost to avoid exposing the server to the internet
+    console.log(`Server is running on http://localhost:${PORT}`);
   });
 }
 
