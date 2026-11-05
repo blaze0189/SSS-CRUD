@@ -154,8 +154,11 @@ app.post('/snacks', (req, res) => {
   if (price < 0 || quantity < 0) {
     return res.status(400).json({ "error": "Invalid price or quantity value. Use non-negative numbers." });
   }
+  // Generate a new ID for the snacks
+  let newId = snacks.length > 0 ? Math.max(...snacks.map(snacks => snacks.id))+ 1 : 1;
+
   const newSnack = { name, price: Number(price), quantity: Number(quantity) };
-  snacks.push(newSnack);
+  snacks.push(newSnack); // add the newly created snack to the snacks array
   res.status(201).json(newSnack);
 });
 
