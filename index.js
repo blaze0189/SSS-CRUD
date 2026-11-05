@@ -36,6 +36,8 @@ const electronics = [
   { id: 10, name: 'Phone Charger', price: 12.99, quantity: 90 },
 ];
 
+var lastElectronic
+
 // ============================================================
 // TODO: Implement the routes below
 // ============================================================
@@ -144,7 +146,7 @@ const filterByMaxPriceThenSort = (itemArray, maxPrice, sort) => {
 // POST /snacks
 // Add a new snack to the array. The request body will contain name, price, and quantity.
 app.post('/snacks', (req, res) => {
-  const { price, name, quantity } = req.body; // use destructuring assignment to get the values from the request body
+  const { price, name, quantity } = req.body ?? {}; // use an empty object when no request body was sent
   if (!name || !price || !quantity) {
     return res.status(400).json({ "error": "Missing required fields" });
   }
@@ -154,12 +156,12 @@ app.post('/snacks', (req, res) => {
   if (price < 0 || quantity < 0) {
     return res.status(400).json({ "error": "Invalid price or quantity value. Use non-negative numbers." });
   }
-  // Generate a new ID for the snacks
-  let newId = snacks.length > 0 ? Math.max(...snacks.map(snacks => snacks.id))+ 1 : 1;
+  // Generate an ID that is one greater than the current highest snack ID
+  const newId = snacks.length > 0 ? Math.max(...snacks.map(snack => snack.id)) + 1 : 1;
 
-  const newSnack = { name, price: Number(price), quantity: Number(quantity) };
+  const newSnack = { id: newId, name, price: Number(price), quantity: Number(quantity) };
   snacks.push(newSnack); // add the newly created snack to the snacks array
-  res.status(201).json(newSnack);
+  res.status(201).json({message: "Snack added successfully", snack: newSnack});
 });
 
 // for CA1 and CA2, you might want to do a catch-all route to handle any requests that don't match the above routes. This is a good practice to avoid exposing unnecessary information about your server and to provide a consistent error response for unknown routes. You can add the following code at the end of your route definitions:
