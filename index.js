@@ -36,7 +36,7 @@ const electronics = [
   { id: 10, name: 'Phone Charger', price: 12.99, quantity: 90 },
 ];
 
-var lastElectronic
+// var lastElectronic
 
 // ============================================================
 // TODO: Implement the routes below
