@@ -70,7 +70,14 @@ app.get('/snacks', (req, res) => {
   if (snacks.length === 0) { // in a real database, the "get" (SELECT) returns an array of records
     return res.status(404).json({ error: 'No snacks found' });
   } else {
-    return res.status(200).json(filterByMaxPriceThenSort(snacks, maxPrice, sort)); // for success it is status 200. If not there it is assumed to be 200
+    const result = filterByMaxPriceThenSort(snacks, maxPrice, sort);
+
+    // If the helper returns an error, send HTTP status 400 (Bad Request).
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result); // Send the filtered or sorted snacks.
   }
 });
 
@@ -94,7 +101,14 @@ app.get('/electronics', (req, res) => {
   if (electronics.length === 0) { // in a real database, the "get" (SELECT) returns an array of records
     return res.status(404).json({ error: 'No electronics found' });
   } else {
-    return res.status(200).json(filterByMaxPriceThenSort(electronics, maxPrice, sort));
+    const result = filterByMaxPriceThenSort(electronics, maxPrice, sort);
+
+    // Stop here if maxPrice or sort contains an invalid value.
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result);
   }
 });
 
@@ -108,39 +122,66 @@ app.get('/', (req, res) => {
   // TODO: Implement this route
   // Hint: use req.query to access query parameters (e.g., req.query.category)
   const { category, maxPrice, sort } = req.query;
-  if (!category) {
-    return res.status(200).json({ snacks: filterByMaxPriceThenSort(snacks, maxPrice, sort), electronics: filterByMaxPriceThenSort(electronics, maxPrice, sort) });
+
+  // "undefined" means that the user did not provide a category.
+  if (category === undefined) {
+    const snackResult = filterByMaxPriceThenSort(snacks, maxPrice, sort);
+    const electronicsResult = filterByMaxPriceThenSort(electronics, maxPrice, sort);
+
+    // Both collections use the same query options, so return any error first.
+    if (snackResult.error) {
+      return res.status(400).json(snackResult);
+    }
+    if (electronicsResult.error) {
+      return res.status(400).json(electronicsResult);
+    }
+
+    return res.status(200).json({ snacks: snackResult, electronics: electronicsResult });
   } else if (category === 'snacks') {
-    return res.status(200).json(filterByMaxPriceThenSort(snacks, maxPrice, sort));
+    const result = filterByMaxPriceThenSort(snacks, maxPrice, sort);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    return res.status(200).json(result);
   } else if (category === 'electronics') {
-    return res.status(200).json(filterByMaxPriceThenSort(electronics, maxPrice, sort));
+    const result = filterByMaxPriceThenSort(electronics, maxPrice, sort);
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    return res.status(200).json(result);
   } else {
-    return res.status(400).json({ "error": "Invalid category" });
+    return res.status(400).json({ error: "Invalid category. Use 'snacks' or 'electronics'." });
   }
 });
 
 const filterByMaxPriceThenSort = (itemArray, maxPrice, sort) => {
-  // Implementation for filtering by maxPrice and sorting
+  // Start with a copy so the original snacks/electronics array is not changed.
   let filteredArray = [...itemArray]; // create a copy of the original array to avoid mutating it
-  if (!maxPrice) {
-    console.log(`no maxPrice option specified`); // default when maxPrice option not specified to use original array. This is the default behavior of the .filter() method when no callback function is provided.
-  } else if (isNaN(maxPrice)) {
-    return({ "error": "Invalid maxPrice value. Use a number." });
-  } else if (maxPrice < 0) {
-    return({ "error": "Invalid maxPrice value. Use a non-negative number." });
+
+  // Only check maxPrice when it was included in the URL.
+  if (maxPrice === undefined) {
+    // No maxPrice means that all prices are allowed.
+  } else if (String(maxPrice).trim() === '' || isNaN(Number(maxPrice)) || Number(maxPrice) <= 0) {
+    return { error: 'Invalid maxPrice. Must be a positive number.' };
   } else {
+    // Keep only items whose price is less than or equal to maxPrice.
     filteredArray = itemArray.filter(element => element.price <= Number(maxPrice));
   }
-  if (!sort) {
-    console.log(`no sorting option specified`); // default when sort option not specified to use original order of the array. This is the default behavior of the .sort() method when no compare function is provided.
+
+  // Only sort when the sort option was included in the URL.
+  if (sort === undefined) {
+    // No sort option means that the original order is kept.
   } else if (sort === 'asc') {
+    // Smallest price first.
     filteredArray.sort((a, b) => a.price - b.price);
   } else if (sort === 'desc') {
+    // Largest price first.
     filteredArray.sort((a, b) => b.price - a.price);
   } else {
-    return({ "error": "Invalid sort option. Use 'asc' or 'desc'." });
+    return { error: "Invalid sort. Use 'asc' or 'desc'." };
   }
-  return (filteredArray)
+
+  return filteredArray;
 };
 
 // POST /snacks
